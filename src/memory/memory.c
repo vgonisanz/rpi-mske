@@ -5,14 +5,13 @@
 #define MEMORY_SIZE 64
 #define MEMORY_ALIGN 256
 
-
 /* Translation table 0: First 64 MB in memory. Needs to be aligned to its size (i.e: 64*4 bytes) */
-unsigned int pagetable0[MEMORY_SIZE]	__attribute__ ((aligned (MEMORY_ALIGN)));
+unsigned int pagetable0[64]	__attribute__ ((aligned (256)));
 
 /* Need to access the page table, etc as physical memory */
 static unsigned int *pagetable = (unsigned int * const) mem_p2v(0x4000); /* 16k */
 
-void init_memory(void)
+int init_memory(void)
 {
   printk("Initializing memory...\n");
 
@@ -24,7 +23,7 @@ void init_memory(void)
 	{
 		pagetable0[x] = 0;
 	}
-  printk("Created pagetable with %d MBs.\n", MEMORY_SIZE);
+  printk("Created pagetable 0 with %d MBs at virtual address 0x%x.\n", MEMORY_SIZE, pagetable);
 
 	/* Get physical address of pagetable 0 */
 	pagetable0_address = mem_v2p((unsigned int) &pagetable0);
@@ -38,7 +37,9 @@ void init_memory(void)
 	/* Invalidate the translation lookaside buffer (TLB): ARM1176JZF-S manual, p. 3-86 */
 	asm volatile("mcr p15, 0, %[data], c8, c7, 0" : : [data] "r" (0));
 
+  printk("Created pagetable 0 at physical address 0x%x.\n", pagetable0_address);
   printk("Memory initialized!\n");
+  return 0;
 }
 
 unsigned int mem_v2p(unsigned int virtual_address)
@@ -49,6 +50,7 @@ unsigned int mem_v2p(unsigned int virtual_address)
   /* Translation fault */
 	if(type_of_entry == 0)
 	{
+    printk("Cannot convert virtual address 0x%x, translation fault!\n", virtual_address); /* TODO check if mean nothing mapped */
 		return 0xffffffff;
 	}
 
@@ -98,6 +100,7 @@ unsigned int mem_v2p(unsigned int virtual_address)
   /* Reserved */
   if(type_of_entry == 3)
   {
+    printk("Cannot convert virtual address 0x%x, reserved!\n", virtual_address);
     return 0xffffffff;
   }
   /* Unknown problem, cannot come here */

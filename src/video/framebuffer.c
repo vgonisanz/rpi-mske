@@ -22,7 +22,7 @@ int init_framebuffer()
 	 * (channel 8) needs to be aligned to 16 bytes as the bottom 4 bits of the address
 	 * passed to VideoCore are used for the mailbox number
    */
-	volatile unsigned int mailbuffer[256] __attribute__((aligned (16)));
+	volatile unsigned int mailbuffer[MAILBUFFER_SIZE] __attribute__((aligned (MAILBUFFER_ALIGN)));
 
 	/* Physical memory address of the mailbuffer, for passing to VC */
 	unsigned int physical_mb = mem_v2p((unsigned int)mailbuffer);
@@ -45,9 +45,11 @@ int init_framebuffer()
 
   /* Valid response in data structure TODO check why 80000000 */
   if(mailbuffer[1] != 0x80000000)
+  {
     result = -1;
     printk("Error initializing framebuffer, address: %x\n", mailbuffer[1]);
     return result;
+  }
 
   unsigned int screen_width = mailbuffer[5];
   unsigned int screen_height = mailbuffer[6];

@@ -40,6 +40,8 @@
 #define MAILBOX_CHANNEL_ARM2VC 8
 #define MAILBOX_CHANNEL_VC2ARM 9
 
+#define READ_MAILBOX_TIMEOUT 1<<25
+
 typedef struct
 {
   unsigned int read;

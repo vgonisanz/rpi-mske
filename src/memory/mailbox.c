@@ -1,5 +1,7 @@
 #include <memory/mailbox.h>
 
+#include <common/io.h>
+
 #include <memory/barrier.h>
 #include <memory/memory.h>
 
@@ -14,6 +16,7 @@ unsigned int read_mailbox(unsigned int channel)
   /* Check if channel is no greater than 4 bits */
   if(channel > 15)
   {
+    printk("Error read mailbox: Cannot read more than 15 channels, given: %d.\n", channel);
     return data;
   }
 
@@ -27,8 +30,9 @@ unsigned int read_mailbox(unsigned int channel)
 			flush_cache();
 
 			/* This is an arbitrary large number */
-			if(count++ >(1<<25))
+			if(count++ > READ_MAILBOX_TIMEOUT )
 			{
+        printk("Error read mailbox: empty too much time.\n");
 				return data;
 			}
 		}
@@ -40,7 +44,7 @@ unsigned int read_mailbox(unsigned int channel)
     /* Check if is the channel number desired */
 		if ((data & 0xF) == channel)
     {
-      data >>= 4; /* TODO check if correct --> The upper 28 bits are the returned data */
+      //data >>= 4; /* TODO check if correct --> The upper 28 bits are the returned data */
 			return data;
     }
 	}
@@ -52,14 +56,16 @@ int write_mailbox(unsigned int channel, unsigned int data)
   unsigned int result = -1;
 
   /* Check if data override channel bits */
-  if(data & 0x0f)
-  {
-    return result;
-  }
+  //if(data & 0x0f)
+  //{
+  //printk("Error write mailbox: data override channel bits.\n");
+  //  return result;
+  //}
 
   /* Check if channel is no greater than 4 bits */
   if(channel > 15)
   {
+    printk("Error write mailbox: Cannot read more than 15 channels, given: %d.\n", channel);
     return result;
   }
 

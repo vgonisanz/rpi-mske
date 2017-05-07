@@ -30,7 +30,7 @@
 #define VIRTUAL_ADDRESS_BASE    0x80000000
 
 /* Initialise memory: Set up first 64MB of RAM as unmapped pagetable */
-extern void init_memory(void);
+extern int init_memory(void);
 
 /* Convert a physical address to a virtual one */
 #define mem_p2v(X) (X+VIRTUAL_ADDRESS_BASE)
