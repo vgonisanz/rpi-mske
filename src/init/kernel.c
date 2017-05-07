@@ -13,6 +13,8 @@
 #include <gpio/gpio.h>
 #include <led/led.h>
 #include <uart/uart.h>
+#include <video/framebuffer.h>
+#include <memory/memory.h>
 #include <timer/timer.h>
 
 #if defined(__cplusplus)
@@ -64,7 +66,7 @@ void kernel_main(u32 r0, u32 r1, u32 atags)
     blink(3, 1000000);
 
     device_init();
-    
+
     if ((uart_dev_id = uart_register()) < 0)
     {
         kernel_panic();
@@ -72,6 +74,8 @@ void kernel_main(u32 r0, u32 r1, u32 atags)
 
     welcome_message();
     resume_atags();
+    init_memory();
+    init_framebuffer();
 
     u8 buffer;
     while (true)
