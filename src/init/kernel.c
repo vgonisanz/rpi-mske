@@ -74,7 +74,7 @@ void kernel_main(u32 r0, u32 r1, u32 atags)
 
     welcome_message();
     resume_atags();
-    init_memory();
+    //init_memory();
     init_framebuffer();
 
     u8 buffer;

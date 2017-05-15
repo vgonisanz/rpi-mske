@@ -36,6 +36,10 @@
 /* Mailbox empty: Bit 30 is set in the status register if there is nothing to read from the mailbox */
 #define MAILBOX_EMPTY 0x40000000
 
+/* REQUEST ID */
+#define REQUEST_SUCCESSFUL 0x80000000
+#define REQUEST_ERROR 0x80000001
+
 /* Define channels */
 #define MAILBOX_CHANNEL_ARM2VC 8
 #define MAILBOX_CHANNEL_VC2ARM 9
