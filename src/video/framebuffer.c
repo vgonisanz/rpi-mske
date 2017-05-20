@@ -14,36 +14,36 @@
  * (channel 8) needs to be aligned to 16 bytes as the bottom 4 bits of the address
  * passed to VideoCore are used for the mailbox number
  */
-static volatile unsigned int mailbuffer[MAILBUFFER_SIZE] __attribute__((aligned (MAILBUFFER_ALIGN)));
-static unsigned int mailbox_response = 0;
+static volatile u32 mailbuffer[MAILBUFFER_SIZE] __attribute__((aligned (MAILBUFFER_ALIGN)));
+static u32 mailbox_response = 0;
 
-static unsigned int _screen_width = 0;
-static unsigned int _screen_height = 0;
-static unsigned int _physical_screenbase = 0;
-static unsigned int _screensize = 0;
-static unsigned int _pitch = 0;         /* Bytes per line */
-static unsigned int _screen_cols = 0;
-static unsigned int _screen_rows = 0;
+static u32 _screen_width = 0;
+static u32 _screen_height = 0;
+static u32 _physical_screenbase = 0;
+static u32 _screensize = 0;
+static u32 _pitch = 0;         /* Bytes per line */
+static u32 _screen_cols = 0;
+static u32 _screen_rows = 0;
 
-static unsigned short int _foreground_color = 0xffff;  /* Black */
-//static unsigned short int _background_color = 0;
+static u16 _foreground_color = 0xffff;  /* Black */
+//static u16 _background_color = 0;
 
 /* Character cells are 6x10: Change for dictionary header */
 #define CHARSIZE_X	6
 #define CHARSIZE_Y	10
 
 /* Function declaration */
-static int get_resolution(unsigned int* width, unsigned int* height);
-static int set_up_screen(unsigned int width, unsigned int height);
+static s32 get_resolution(u32* width, u32* height);
+static s32 set_up_screen(u32 width, u32 height);
 
-static int print_background();
+static s32 print_background();
 
 /* Function definitions */
-int init_framebuffer()
+s32 init_framebuffer()
 {
   printk("Initializing framebuffer...\n");
 
-  int result = 0;
+  s32 result = 0;
 
   /* Write resolution in variables */
   result = get_resolution(&_screen_width, &_screen_height);
@@ -61,10 +61,10 @@ int init_framebuffer()
   return result;
 }
 
-static int get_resolution(unsigned int* width, unsigned int* height)
+static s32 get_resolution(u32* width, u32* height)
 {
   /* Physical memory address of the mailbuffer, for passing to VC */
-  //unsigned int physical_mb = mem_v2p((unsigned int)mailbuffer); /* No virtual memory yet */
+  //u32 physical_mb = mem_v2p((u32)mailbuffer); /* No virtual memory yet */
 
   /* Get the display size */
   mailbuffer[0] = 8 * 4;		// Total size
@@ -77,7 +77,7 @@ static int get_resolution(unsigned int* width, unsigned int* height)
   mailbuffer[7] = 0;		// End tag
 
   //printk("Writing mailbox!\n");
-  write_mailbox(8, (unsigned int)mailbuffer);
+  write_mailbox(8, (u32)mailbuffer);
 
   //printk("Reading mailbox!\n");
   mailbox_response = read_mailbox(8);
@@ -100,12 +100,12 @@ static int get_resolution(unsigned int* width, unsigned int* height)
   return 0;
 }
 
-int set_up_screen(unsigned int width, unsigned int height)
+s32 set_up_screen(u32 width, u32 height)
 {
-  unsigned int count; // Count positions
-  unsigned int var;
+  u32 count; // Count positions
+  u32 var;
 
-	unsigned int c = 1;
+	u32 c = 1;
 	mailbuffer[c++] = 0;		// Request
 
 	mailbuffer[c++] = 0x00048003;	// Tag id (set physical size)
@@ -135,7 +135,7 @@ int set_up_screen(unsigned int width, unsigned int height)
 
 	mailbuffer[0] = c*4;		// Buffer size
 
-	write_mailbox(8, (unsigned int)mailbuffer);
+	write_mailbox(8, (u32)mailbuffer);
 
 	var = read_mailbox(8);
 
@@ -197,7 +197,7 @@ int set_up_screen(unsigned int width, unsigned int height)
   mailbuffer[5] = 0;		// Space for pitch
   mailbuffer[6] = 0;		// End tag
 
-  write_mailbox(8, (unsigned int)mailbuffer);
+  write_mailbox(8, (u32)mailbuffer);
 
   var = read_mailbox(8);
 
@@ -226,22 +226,22 @@ int set_up_screen(unsigned int width, unsigned int height)
   return 0;
 }
 
-static int print_background()
+static s32 print_background()
 {
   printk("Print background!\n");
 
-  volatile unsigned short int *pixel_address = 0; /* Memory screen pointer */
+  volatile u16 *pixel_address = 0; /* Memory screen pointer */
 
   // Try red character:
-  //unsigned int character = 41; /* A */
+  //u32 character = 41; /* A */
   //_foreground_color = 0b1111100000000000;  /* RED */
   _foreground_color = rgb_565(0xFF0000);  /* Test COLORS */
-  //unsigned int background_color = 0b0000000000000000;
+  //u32 background_color = 0b0000000000000000;
 
   // Buffer index in memory
-  unsigned int row_address = 0;
-  unsigned int row = 0;
-  unsigned int col = 0;
+  u32 row_address = 0;
+  u32 row = 0;
+  u32 col = 0;
 
   /* Draw character pixels */
   /* Screen width? */
@@ -250,7 +250,7 @@ static int print_background()
     row_address = _physical_screenbase + _pitch * row;
     for(col = 0; col < _screen_cols; col++)
     {
-      pixel_address = (unsigned short int *)(row_address + col);
+      pixel_address = (u16 *)(row_address + col);
       *pixel_address = _foreground_color;
     }
   }

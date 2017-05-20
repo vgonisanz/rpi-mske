@@ -8,6 +8,6 @@
 
 #include <types.h>
 
-int init_framebuffer();
+s32 init_framebuffer();
 
 #endif	/* _FRAMEBUFFER_H */

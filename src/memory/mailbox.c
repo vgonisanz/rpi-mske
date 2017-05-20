@@ -7,11 +7,11 @@
 
 static volatile mske_mailbox* const mailbox0 = (mske_mailbox*)MAILBOX0_ADDRESS;
 
-unsigned int read_mailbox(unsigned int channel)
+u32 read_mailbox(u32 channel)
 {
   /* default data error */
-  unsigned int data = 0xffffffff;
-  unsigned int count = 0;
+  u32 data = 0xffffffff;
+  u32 count = 0;
 
   /* Check if channel is no greater than 4 bits */
   if(channel > 15)
@@ -50,10 +50,10 @@ unsigned int read_mailbox(unsigned int channel)
 	}
 }
 
-int write_mailbox(unsigned int channel, unsigned int data)
+s32 write_mailbox(u32 channel, u32 data)
 {
   /* default data error */
-  unsigned int result = -1;
+  u32 result = -1;
 
   /* Check if data override channel bits */
   //if(data & 0x0f)

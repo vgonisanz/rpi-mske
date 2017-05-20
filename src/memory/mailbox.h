@@ -16,7 +16,7 @@
 *      0    0x10  0x00        0x18    0x14    0x1c
 *      1    0x30  0x20        0x38    0x34    0x3c
 *
-* All registers are unsigned int (32 bits) little-endian.
+* All registers are u32 (32 bits) little-endian.
 *
 * More info: https://github.com/raspberrypi/firmware/wiki/Accessing-mailboxes
 *
@@ -48,21 +48,21 @@
 
 typedef struct
 {
-  unsigned int read;
-  unsigned int unused1;
-  unsigned int unused2;
-  unsigned int unused3;
-  unsigned int poll;
-  unsigned int sender;
-  unsigned int status;
-  unsigned int configuration;
-  unsigned int write;
+  u32 read;
+  u32 unused1;
+  u32 unused2;
+  u32 unused3;
+  u32 poll;
+  u32 sender;
+  u32 status;
+  u32 configuration;
+  u32 write;
 } mske_mailbox;
 
 /* Read a channel. The channel must be zero to 15 */
-extern unsigned int read_mailbox(unsigned int channel);
+extern u32 read_mailbox(u32 channel);
 
 /* Write the given data to the channel. The channel must be zero to 15 and value in last 4 bits */
-extern int write_mailbox(unsigned int channel, unsigned int data);
+extern int write_mailbox(u32 channel, u32 data);
 
 #endif	/* _MAILBOX_H */
