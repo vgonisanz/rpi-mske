@@ -1,6 +1,7 @@
 #include <video/framebuffer.h>
 
 #include <common/io.h>
+#include <video/palette.h>
 
 #include <memory/barrier.h>
 #include <memory/memory.h>
@@ -20,7 +21,7 @@ static unsigned int _screen_width = 0;
 static unsigned int _screen_height = 0;
 static unsigned int _physical_screenbase = 0;
 static unsigned int _screensize = 0;
-static unsigned int _pitch = 0;
+static unsigned int _pitch = 0;         /* Bytes per line */
 static unsigned int _screen_cols = 0;
 static unsigned int _screen_rows = 0;
 
@@ -34,7 +35,8 @@ static unsigned short int _foreground_color = 0xffff;  /* Black */
 /* Function declaration */
 static int get_resolution(unsigned int* width, unsigned int* height);
 static int set_up_screen(unsigned int width, unsigned int height);
-static int test_print();
+
+static int print_background();
 
 /* Function definitions */
 int init_framebuffer()
@@ -54,7 +56,7 @@ int init_framebuffer()
   /* Use resolution as read variables */
   result = set_up_screen(_screen_width, _screen_height);
 
-  test_print();
+  print_background();
   printk("Framebuffer initialized!\n");
   return result;
 }
@@ -224,26 +226,33 @@ int set_up_screen(unsigned int width, unsigned int height)
   return 0;
 }
 
-static int test_print()
+static int print_background()
 {
-  printk("Test color!\n");
+  printk("Print background!\n");
 
-  volatile unsigned short int *ptr; /* Memory screen pointer */
+  volatile unsigned short int *pixel_address = 0; /* Memory screen pointer */
 
   // Try red character:
   //unsigned int character = 41; /* A */
-  _foreground_color = 0b1111100000000000;  /* RED */
+  //_foreground_color = 0b1111100000000000;  /* RED */
+  _foreground_color = rgb_565(0xFF0000);  /* Test COLORS */
   //unsigned int background_color = 0b0000000000000000;
 
   // Buffer index in memory
-  unsigned int buffer_index = 0;
+  unsigned int row_address = 0;
   unsigned int row = 0;
+  unsigned int col = 0;
 
   /* Draw character pixels */
-  for(row = 0; row < CHARSIZE_Y; row++)
+  /* Screen width? */
+  for(row = 0; row < _screen_rows; row++)
 	{
-    ptr = (unsigned short int *)(_physical_screenbase + buffer_index);
-    *ptr = _foreground_color;
+    row_address = _physical_screenbase + _pitch * row;
+    for(col = 0; col < _screen_cols; col++)
+    {
+      pixel_address = (unsigned short int *)(row_address + col);
+      *pixel_address = _foreground_color;
+    }
   }
   printk("Test color end!\n");
   return 0;

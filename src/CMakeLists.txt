@@ -38,7 +38,8 @@ set(COMMON_SRC "common/device.c"
 set(GPIO_SRC "gpio/gpio.c")
 set(LED_SRC "led/led.c")
 set(UART_SRC "uart/uart.c")
-set(VIDEO_SRC   "video/framebuffer.c")
+set(VIDEO_SRC   "video/framebuffer.c"
+                "video/palette.c")
 set(MEMORY_SRC  "memory/memory.c"
                 "memory/mailbox.c")
 set(IRQ_SRC "irq/irq.c")

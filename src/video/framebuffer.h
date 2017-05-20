@@ -6,7 +6,7 @@
 #ifndef _FRAMEBUFFER_H
 #define _FRAMEBUFFER_H
 
-/* */
+#include <types.h>
 
 int init_framebuffer();
 
