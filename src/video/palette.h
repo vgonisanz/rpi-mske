@@ -1,4 +1,4 @@
-/* 16-bit RGB565:
+/* 16-bits per pixel - RGB (rrrrr gggggg bbbbb) = RGB565:
 * - Color palette of 32×64×32 = 65,536 colors.
 * - 5 bits allocated for the Red and Blue color components (32 levels each) and 6 bits for the Green component (64 levels).
 * RED     = 0b1111100000000000

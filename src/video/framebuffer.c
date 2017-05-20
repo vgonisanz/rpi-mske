@@ -1,6 +1,7 @@
 #include <video/framebuffer.h>
 
 #include <common/io.h>
+#include <video/monospace_font.h>
 #include <video/palette.h>
 
 #include <memory/barrier.h>
@@ -17,29 +18,30 @@
 static volatile u32 mailbuffer[MAILBUFFER_SIZE] __attribute__((aligned (MAILBUFFER_ALIGN)));
 static u32 mailbox_response = 0;
 
-static u32 _screen_width = 0;
-static u32 _screen_height = 0;
 static u32 _physical_screenbase = 0;
-static u32 _screensize = 0;
-static u32 _pitch = 0;         /* Bytes per line */
-static u32 _screen_cols = 0;
-static u32 _screen_rows = 0;
 
-static u16 _foreground_color = 0xffff;  /* Black */
-//static u16 _background_color = 0;
+static u32 _screen_width = 0;     /* Width of the allocated frame buffer */
+static u32 _screen_height = 0;    /* Height of the allocated frame buffer */
+static u32 _screensize = 0;       /* The size of the frame buffer */
+static u32 _depth = 0;            /* The number of bits per pixel of the requested frame buffer */
+static u32 _pitch = 0;            /* Number of bytes between each row of the frame buffer. */
 
-/* Character cells are 6x10: Change for dictionary header */
-#define CHARSIZE_X	6
-#define CHARSIZE_Y	10
+static u32 _character_cols = 0;
+static u32 _character_rows = 0;
+static u32 _character_pos_x = 0;
+static u32 _character_pos_y = 0;
 
-/* Function declaration */
+static u16 _foreground_color = 0xffff;  /* White */
+static u16 _background_color = 0x0000;
+
+/* Function private declaration */
 static s32 get_resolution(u32* width, u32* height);
-static s32 set_up_screen(u32 width, u32 height);
+static s32 set_up_screen(u32 width, u32 height, u32 depth);
+static void get_pixel_address(u32 x, u32 y, u16** pixel_address);
+static void get_cursor_address(u32 x, u32 y, u16** cursor_address);
 
-static s32 print_background();
-
-/* Function definitions */
-s32 init_framebuffer()
+/* Function public definitions */
+s32 init_framebuffer(u32 width, u32 height, u32 background_color)
 {
   printk("Initializing framebuffer...\n");
 
@@ -51,16 +53,112 @@ s32 init_framebuffer()
   {
     return result;
   }
-  printk("Resolution found: %dx%d\n", _screen_width, _screen_height);
+  printk("Initial resolution found is: %dx%d\n", _screen_width, _screen_height);
 
-  /* Use resolution as read variables */
-  result = set_up_screen(_screen_width, _screen_height);
+  /* Set resolution and allocate framebuffer with 16 bpp - RGB (rrrrr gggggg bbbbb) */
+  result = set_up_screen(width, height, 16);
+  print_background(background_color);
+  print_rectangle(20, 20, 0, 0, 0xFF0000);
+  print_rectangle(10, 10, 0, 0, 0x00FF00);
+  print_rectangle(10, 10, 21, 21, 0x00FF00);
+  //set_cursor_position(7, 7);
+  //set_foreground_color(0x00FF00);
+  //set_background_color(0xFF0000);
+  //print_character(1);
 
-  print_background();
   printk("Framebuffer initialized!\n");
   return result;
 }
 
+void set_cursor_position(u32 x, u32 y)
+{
+  if(x > _character_cols)
+  {
+    x = _character_cols;
+  }
+  if(y > _character_rows)
+  {
+    y = _character_rows;
+  }
+  _character_pos_x = x;
+  _character_pos_y = y;
+}
+
+void set_foreground_color(u32 color)
+{
+  _foreground_color = rgb_565(color);
+}
+
+void set_background_color(u32 color)
+{
+  _background_color = rgb_565(color);
+}
+
+void print_character(u8 character)
+{
+  //const int max_character = sizeof(monospace_font) / (FONT_WIDTH * FONT_HEIGHT);
+  //u16* pixel_address = 0;
+  //u16* cursor_address = 0;
+  //get_pixel_address(0, 0, &pixel_address);
+  //get_cursor_address(0, 0, &cursor_address);
+
+  u8 *character_pixels = monospace_font[character];
+
+  // temp
+  u32 row_address = 0;
+  u16* pixel_address = 0;
+
+  for (u32 y = 0; y < FONT_HEIGHT; y++)
+  {
+    row_address = _physical_screenbase + _pitch * (_character_pos_y * FONT_HEIGHT + y);
+    for (u32 x = 0; x < FONT_WIDTH; x++)
+    {
+      u8 pixel = character_pixels[y * FONT_WIDTH + x];
+      pixel_address = (u16 *)(row_address + (_character_pos_x * FONT_WIDTH + x) * 2); /* Cols must set odds, TODO check why */
+
+      if (pixel > 0)
+      {
+        /* Print foreground */
+        *pixel_address = _foreground_color;
+      }
+      else
+      {
+        /* Print background */
+        *pixel_address = _background_color;
+      }
+    }
+  }
+}
+
+void print_rectangle(u32 width, u32 height, u32 x0, u32 y0, u32 color)
+{
+  const u16 color565 = rgb_565(color);
+  volatile u16 *pixel_address = 0; /* Memory screen pointer */
+
+  /* Buffer index in memory */
+  u32 row_address = 0;
+  u32 row = 0;
+  u32 col = 0;
+
+  /* Draw character pixels */
+  for(row = 0; row < height; row++)
+	{
+    row_address = _physical_screenbase + _pitch * row + y0;
+    for(col = 0; col < width; col++)
+    {
+      pixel_address = (u16 *)(row_address + (col + x0) * 2); /* Cols must set odds, TODO check why */
+      *pixel_address = color565;
+    }
+  }
+}
+
+void print_background(u32 color)
+{
+  printk("Print background: 0x%x!\n", color);
+  print_rectangle(_screen_width, _screen_height, 0, 0, color);
+}
+
+/* Function private definitions */
 static s32 get_resolution(u32* width, u32* height)
 {
   /* Physical memory address of the mailbuffer, for passing to VC */
@@ -100,8 +198,11 @@ static s32 get_resolution(u32* width, u32* height)
   return 0;
 }
 
-s32 set_up_screen(u32 width, u32 height)
+s32 set_up_screen(u32 width, u32 height, u32 depth)
 {
+  /* Data */
+  _depth = depth;
+
   u32 count; // Count positions
   u32 var;
 
@@ -123,7 +224,7 @@ s32 set_up_screen(u32 width, u32 height)
 	mailbuffer[c++] = 0x00048005;	// Tag id (set depth)
 	mailbuffer[c++] = 4;		// Value buffer size (bytes)
 	mailbuffer[c++] = 4;		// Req. + value length (bytes)
-	mailbuffer[c++] = 16;		// 16 bpp
+	mailbuffer[c++] = _depth;		// 16 bpp
 
 	mailbuffer[c++] = 0x00040001;	// Tag id (allocate framebuffer)
 	mailbuffer[c++] = 8;		// Value buffer size (bytes)
@@ -217,43 +318,27 @@ s32 set_up_screen(u32 width, u32 height)
 
   printk("Pitch is: %d\n", _pitch);
 
-  /* Need to set up max_x/max_y before using console_write */
-  _screen_cols = _screen_width / CHARSIZE_X;
-  _screen_rows = _screen_height / CHARSIZE_Y;
+  /* Update resolution */
+  get_resolution(&_screen_width, &_screen_height);
 
-  printk("Screen row x cols: %dx%d\n", _screen_cols, _screen_rows);
+  /* Need to set up max_x/max_y before using console_write */
+  _character_cols = (u32)(_screen_width / FONT_WIDTH);
+  _character_rows = (u32)(_screen_height / FONT_HEIGHT);
+
+  printk("Resolution is: %dx%d\n", _screen_width, _screen_height);
+  printk("Screen row x cols: %dx%d\n", _character_cols, _character_rows);
   printk("Screen set up completed!\n");
   return 0;
 }
 
-static s32 print_background()
+static void get_pixel_address(u32 x, u32 y, u16** pixel_address)
 {
-  printk("Print background!\n");
+  const u16* row_address = (u16 *)(_physical_screenbase + _pitch * y);
+  *pixel_address = (u16 *)(row_address + x * 2);               /* Cols must set odds, TODO check why */
+}
 
-  volatile u16 *pixel_address = 0; /* Memory screen pointer */
-
-  // Try red character:
-  //u32 character = 41; /* A */
-  //_foreground_color = 0b1111100000000000;  /* RED */
-  _foreground_color = rgb_565(0xFF0000);  /* Test COLORS */
-  //u32 background_color = 0b0000000000000000;
-
-  // Buffer index in memory
-  u32 row_address = 0;
-  u32 row = 0;
-  u32 col = 0;
-
-  /* Draw character pixels */
-  /* Screen width? */
-  for(row = 0; row < _screen_rows; row++)
-	{
-    row_address = _physical_screenbase + _pitch * row;
-    for(col = 0; col < _screen_cols; col++)
-    {
-      pixel_address = (u16 *)(row_address + col);
-      *pixel_address = _foreground_color;
-    }
-  }
-  printk("Test color end!\n");
-  return 0;
+static void get_cursor_address(u32 x, u32 y, u16** cursor_address)
+{
+  const u16* row_address = (u16 *)(_physical_screenbase + _pitch * y * FONT_HEIGHT);
+  *cursor_address = (u16 *)(row_address + x * FONT_WIDTH * 2);               /* Cols must set odds, TODO check why */
 }
