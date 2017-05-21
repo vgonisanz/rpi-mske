@@ -75,7 +75,8 @@ void kernel_main(u32 r0, u32 r1, u32 atags)
     welcome_message();
     resume_atags();
     //init_memory();
-    init_framebuffer(640, 480, 0x0000FF); /* Init screen 640x480 and blue color */
+    //init_framebuffer(800, 480, 0x0000FF); /* Init screen 640x480 and blue color */
+    init_framebuffer(656, 416, 0xFFFFFF); /*  white color */
 
     u8 buffer;
     while (true)

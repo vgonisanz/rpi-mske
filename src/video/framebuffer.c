@@ -22,8 +22,8 @@ static u32 _physical_screenbase = 0;
 
 static u32 _screen_width = 0;     /* Width of the allocated frame buffer */
 static u32 _screen_height = 0;    /* Height of the allocated frame buffer */
-static u32 _screensize = 0;       /* The size of the frame buffer */
 static u32 _depth = 0;            /* The number of bits per pixel of the requested frame buffer */
+static u32 _screensize = 0;       /* The size of the frame buffer: width x height x depth (bytes per pixel) */
 static u32 _pitch = 0;            /* Number of bytes between each row of the frame buffer. */
 
 static u32 _character_cols = 0;
@@ -60,7 +60,7 @@ s32 init_framebuffer(u32 width, u32 height, u32 background_color)
   print_background(background_color);
   print_rectangle(20, 20, 0, 0, 0xFF0000);
   print_rectangle(10, 10, 0, 0, 0x00FF00);
-  print_rectangle(10, 10, 21, 21, 0x00FF00);
+  print_rectangle(10, 10, 20, 20, 0x00FF00);
   //set_cursor_position(7, 7);
   //set_foreground_color(0x00FF00);
   //set_background_color(0xFF0000);
@@ -136,18 +136,26 @@ void print_rectangle(u32 width, u32 height, u32 x0, u32 y0, u32 color)
   volatile u16 *pixel_address = 0; /* Memory screen pointer */
 
   /* Buffer index in memory */
+  u32 initial_address = 0;
   u32 row_address = 0;
+  u32 col_address = 0;
   u32 row = 0;
   u32 col = 0;
+
+  initial_address = _physical_screenbase + _pitch * y0;
 
   /* Draw character pixels */
   for(row = 0; row < height; row++)
 	{
-    row_address = _physical_screenbase + _pitch * row + y0;
+    row_address = initial_address + _pitch * row;
+    col_address = row_address + x0 * 2;
     for(col = 0; col < width; col++)
     {
-      pixel_address = (u16 *)(row_address + (col + x0) * 2); /* Cols must set odds, TODO check why */
+      pixel_address = (u16 *)(col_address); /* Cols must set odds, TODO check why */
+      *pixel_address = 0xFFFFFF;
+      col_address += 1;
       *pixel_address = color565;
+      col_address += 1;
     }
   }
 }
