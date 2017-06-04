@@ -14,6 +14,11 @@
 s32 init_framebuffer(u32 width, u32 height, u32 background_color);
 
 /*
+* Draw a pixel with color given.
+*/
+void print_pixel(u32 x0, u32 y0, u32 color);
+
+/*
 * Draw rectangle with color given.
 */
 void print_rectangle(u32 width, u32 height, u32 x0, u32 y0, u32 color);
@@ -26,7 +31,7 @@ void print_background(u32 color);
 /*
 * Draw ASCII character.
 */
-void print_character(u8 character);
+void print_character(u8 character, u8 pixel_width);
 
 /*
 * Change current cursor position, x = cols, y = rows
